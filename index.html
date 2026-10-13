@@ -1,0 +1,352 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>AutoLedgers — Car Dealership Management (Demo)</title>
+<style>
+:root{ color-scheme: light;
+  --brand:#0e7c66; --brand-dark:#0a5e4d; --brand-light:#e6f4f0;
+  --ink:#0f172a; --muted:#64748b; --line:#e5e9f0; --bg:#f5f7fa; --card:#ffffff;
+  --pos:#0e7c66; --neg:#dc2626; --amber:#b45309;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--ink);-webkit-font-smoothing:antialiased}
+.app{display:flex;min-height:100vh}
+a{color:inherit;text-decoration:none}
+button{font-family:inherit}
+.demobar{position:fixed;top:0;left:0;right:0;height:30px;background:#0f172a;color:#cbd5e1;font-size:12px;display:flex;align-items:center;justify-content:center;gap:8px;z-index:60;letter-spacing:.02em}
+.demobar b{color:#fff}
+.demobar .dot{width:7px;height:7px;border-radius:50%;background:#10b981;display:inline-block}
+.side{width:244px;flex:none;background:#0f1b2d;color:#e2e8f0;display:flex;flex-direction:column;position:sticky;top:0;height:100vh;padding-top:30px}
+.brand{display:flex;align-items:center;gap:11px;padding:18px 18px 16px}
+.logo{width:40px;height:40px;border-radius:11px;background:linear-gradient(135deg,#0e7c66,#12a383);display:grid;place-items:center;font-weight:800;color:#fff;font-size:15px;letter-spacing:.5px}
+.brand .nm{font-weight:800;font-size:16px;line-height:1.1}
+.brand .sub{font-size:11px;color:#8aa0b6}
+.nav{padding:6px 10px;flex:1;overflow:auto}
+.nav a{display:flex;align-items:center;gap:11px;padding:10px 12px;border-radius:10px;color:#aebccd;font-size:14px;font-weight:500;margin:2px 0;cursor:pointer}
+.nav a svg{width:18px;height:18px;flex:none;stroke:currentColor;fill:none;stroke-width:1.9}
+.nav a:hover{background:rgba(255,255,255,.06);color:#fff}
+.nav a.active{background:#fff;color:#0f1b2d}
+.nav a.active svg{stroke:var(--brand)}
+.side .foot{border-top:1px solid rgba(255,255,255,.08);padding:14px 18px;font-size:13px}
+.side .foot .u{font-weight:700}
+.side .foot .r{font-size:11px;color:#8aa0b6}
+.main{flex:1;min-width:0;margin-top:30px;padding:26px 30px 60px}
+.h1{font-size:23px;font-weight:800;margin:0}
+.sub{color:var(--muted);font-size:13px;margin:3px 0 0}
+.head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:20px}
+.btn{border:1px solid var(--line);background:#fff;border-radius:10px;padding:9px 14px;font-size:13px;font-weight:600;color:#334155;cursor:pointer;display:inline-flex;align-items:center;gap:7px}
+.btn:hover{background:#f8fafc}
+.btn.primary{background:var(--brand);border-color:var(--brand);color:#fff}
+.btn.primary:hover{background:var(--brand-dark)}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-bottom:22px}
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 18px}
+.kpi .lab{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;font-weight:600}
+.kpi .val{font-size:26px;font-weight:800;margin-top:6px}
+.kpi .delta{font-size:12px;margin-top:5px;font-weight:600}
+.kpi .delta.up{color:var(--pos)} .kpi .delta.down{color:var(--neg)} .kpi .delta.mut{color:var(--muted)}
+.grid2{display:grid;grid-template-columns:1.4fr 1fr;gap:16px}
+@media(max-width:900px){
+  .grid2{grid-template-columns:1fr}
+  .app{flex-direction:column}
+  .side{width:100%;height:auto;position:static;flex-direction:row;align-items:center;padding:30px 0 0;overflow-x:auto}
+  .brand{display:none}
+  .side .foot{display:none}
+  .nav{display:flex;flex-direction:row;gap:6px;padding:8px 12px;width:100%}
+  .nav a{white-space:nowrap;margin:0}
+  .main{margin-top:0;padding:18px 16px 50px}
+}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px 20px}
+.card h3{margin:0 0 14px;font-size:15px;font-weight:700}
+.bars{display:flex;align-items:flex-end;gap:12px;height:180px;padding-top:8px}
+.bar{flex:1;display:flex;flex-direction:column;align-items:center;gap:7px;height:100%}
+.bar .col{width:100%;max-width:34px;background:var(--brand-light);border-radius:6px 6px 0 0;position:relative;margin-top:auto}
+.bar .col i{position:absolute;left:0;right:0;bottom:0;top:0;background:linear-gradient(180deg,#12a383,#0e7c66);border-radius:6px 6px 0 0}
+.bar .m{font-size:11px;color:var(--muted)}
+.bar .v{font-size:11px;font-weight:700}
+.toolbar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+.search{flex:1;min-width:220px;position:relative}
+.search input{width:100%;border:1px solid var(--line);border-radius:10px;padding:10px 12px 10px 36px;font-size:14px;outline:none}
+.search input:focus{border-color:var(--brand);box-shadow:0 0 0 3px rgba(14,124,102,.12)}
+.search svg{position:absolute;left:11px;top:50%;transform:translateY(-50%);width:16px;height:16px;stroke:#94a3b8;fill:none;stroke-width:2}
+.tablewrap{background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+th{text-align:left;background:#f8fafc;color:#64748b;font-size:11px;text-transform:uppercase;letter-spacing:.04em;padding:11px 14px;border-bottom:1px solid var(--line);font-weight:700}
+td{padding:12px 14px;border-bottom:1px solid #f1f5f9}
+tr:last-child td{border-bottom:0}
+tr.row{cursor:pointer}
+tr.row:hover td{background:#f8fdfb}
+.reg{font-weight:800;color:var(--brand);letter-spacing:.02em}
+.pill{display:inline-block;padding:3px 10px;border-radius:999px;font-size:11px;font-weight:700}
+.pill.stock{background:#e0f2fe;color:#075985}
+.pill.sold{background:#dcfce7;color:#166534}
+.pill.prog{background:#fef3c7;color:#92400e}
+.pos{color:var(--pos);font-weight:700}.neg{color:var(--neg);font-weight:700}
+.mut{color:var(--muted)}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:16px}
+.vcard{background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.vphoto{height:120px;display:flex;align-items:flex-end;padding:10px 12px;color:#fff;font-weight:800;letter-spacing:.03em;text-shadow:0 1px 2px rgba(0,0,0,.3)}
+.vcard .bd{padding:13px 15px}
+.vcard .mk{font-size:14px;font-weight:700}
+.vcard .sm{font-size:12px;color:var(--muted);margin-top:2px}
+.chip{display:inline-block;margin-top:9px;background:var(--brand-light);color:var(--brand-dark);font-size:12px;font-weight:700;padding:3px 10px;border-radius:999px}
+.ov{position:fixed;inset:0;background:rgba(15,23,42,.5);display:none;align-items:flex-start;justify-content:center;padding:44px 16px;z-index:80;overflow:auto}
+.ov.open{display:flex}
+.modal{background:#fff;width:100%;max-width:760px;border-radius:16px;overflow:hidden;box-shadow:0 20px 60px -20px rgba(0,0,0,.4)}
+.mhead{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--line);position:sticky;top:0;background:#fff}
+.mhead .t{font-weight:800;font-size:16px}
+.x{border:none;background:#f1f5f9;width:32px;height:32px;border-radius:9px;cursor:pointer;font-size:16px;color:#475569}
+.mbody{padding:20px}
+.sec{border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:14px}
+.sec h4{margin:0 0 10px;font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:#94a3b8;font-weight:700}
+.rowline{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #f1f5f9;font-size:13.5px}
+.rowline:last-child{border-bottom:0}
+.rowline .k{color:var(--muted)}
+.grid2c{display:grid;grid-template-columns:1fr 1fr;gap:0 26px}
+@media(max-width:620px){.grid2c{grid-template-columns:1fr}}
+.totrow{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;background:#f8fafc;border:1px solid var(--line);border-radius:12px;padding:14px}
+@media(max-width:620px){.totrow{grid-template-columns:repeat(2,1fr)}}
+.totrow .lab{font-size:11px;text-transform:uppercase;color:#94a3b8;font-weight:700}
+.totrow .num{font-size:18px;font-weight:800;margin-top:3px}
+.wd{display:flex;gap:12px;padding:10px 0;border-bottom:1px solid #f1f5f9}
+.wd:last-child{border-bottom:0}
+.wdth{width:76px;height:52px;border-radius:8px;flex:none}
+.wd .d{font-size:11px;color:#94a3b8;text-transform:uppercase;font-weight:700}
+.wd .ti{font-size:13.5px;font-weight:600}
+.wd .no{font-size:13px;color:var(--muted)}
+.wd .cost{margin-left:auto;font-weight:700;font-size:13.5px}
+.inv{border:1px solid var(--line);border-radius:12px;padding:26px;max-width:640px;margin:0 auto;background:#fff}
+.inv .top{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2px solid var(--brand);padding-bottom:16px;margin-bottom:18px}
+.inv .co{font-size:20px;font-weight:800;color:var(--brand)}
+.inv table{font-size:13px}
+.inv th{background:#f8fafc}
+.muted-note{font-size:12px;color:var(--muted);margin-top:8px}
+.hidden{display:none}
+</style>
+</head>
+<body>
+<div class="demobar"><span class="dot"></span> <b>AutoLedgers</b> — live interactive demo · sample data only</div>
+<div class="app">
+  <aside class="side">
+    <div class="brand">
+      <div class="logo">AL</div>
+      <div><div class="nm">AutoLedgers</div><div class="sub">Car Dealership Suite</div></div>
+    </div>
+    <nav class="nav" id="nav">
+      <a data-s="overview" class="active"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg> Overview</a>
+      <a data-s="stock"><svg viewBox="0 0 24 24"><path d="M5 17h14M6 17l1.5-6a2 2 0 0 1 1.9-1.4h5.2A2 2 0 0 1 17.5 11L19 17M7 17v2M17 17v2"/></svg> Stock / Vehicles</a>
+      <a data-s="work"><svg viewBox="0 0 24 24"><path d="M14 7l3 3M5 19l6-6M14 7a3 3 0 1 0 4 4l2 2-4 4-2-2a3 3 0 0 0-4-4z"/></svg> Work Done</a>
+      <a data-s="invoices"><svg viewBox="0 0 24 24"><path d="M7 3h10v18l-3-2-2 2-2-2-3 2zM9 8h6M9 12h6"/></svg> Invoices</a>
+      <a data-s="reports"><svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg> Reports</a>
+    </nav>
+    <div class="foot"><div class="u">Daniel Tan</div><div class="r">Owner · AutoLedgers SG</div></div>
+  </aside>
+
+  <main class="main">
+    <section id="overview">
+      <div class="head"><div><h1 class="h1">Business Overview</h1><p class="sub">October 2026 · all amounts in SGD</p></div>
+        <button class="btn primary" onclick="go('stock')">View stock &rarr;</button></div>
+      <div class="kpis">
+        <div class="kpi"><div class="lab">Vehicles in stock</div><div class="val">24</div><div class="delta up">&#9650; 3 this week</div></div>
+        <div class="kpi"><div class="lab">Stock value</div><div class="val">$2.41M</div><div class="delta mut">at cost</div></div>
+        <div class="kpi"><div class="lab">Sold this month</div><div class="val">9</div><div class="delta up">&#9650; 2 vs Sept</div></div>
+        <div class="kpi"><div class="lab">Net profit (Oct)</div><div class="val" style="color:var(--pos)">$61,480</div><div class="delta up">&#9650; 14%</div></div>
+        <div class="kpi"><div class="lab">Avg days in stock</div><div class="val">19</div><div class="delta up">&#9660; 4 days</div></div>
+      </div>
+      <div class="grid2">
+        <div class="card"><h3>Monthly net profit</h3><div class="bars" id="profitBars"></div></div>
+        <div class="card"><h3>Recent sales</h3><div id="recent"></div></div>
+      </div>
+    </section>
+
+    <section id="stock" class="hidden">
+      <div class="head"><div><h1 class="h1">Stock / Vehicles</h1><p class="sub" id="stockCount"></p></div>
+        <div style="display:flex;gap:8px"><button class="btn">&#8595; Excel</button><button class="btn primary">+ Add vehicle</button></div></div>
+      <div class="toolbar"><div class="search"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg><input id="q" placeholder="Search reg, make, model, buyer&hellip;" oninput="renderStock()"></div></div>
+      <div class="tablewrap"><table>
+        <thead><tr><th>Reg</th><th>Make / Model</th><th>Reg Yr</th><th>Mileage</th><th>Total Cost</th><th>Sale</th><th>Profit</th><th>Status</th></tr></thead>
+        <tbody id="stockBody"></tbody>
+      </table></div>
+      <p class="muted-note">Tap any vehicle to open its full cost breakdown, work-done log and sale invoice.</p>
+    </section>
+
+    <section id="work" class="hidden">
+      <div class="head"><div><h1 class="h1">Work Done</h1><p class="sub">Reconditioning &amp; expenses logged per vehicle</p></div></div>
+      <div class="cards" id="workCards"></div>
+    </section>
+
+    <section id="invoices" class="hidden">
+      <div class="head"><div><h1 class="h1">Invoices</h1><p class="sub">Sales invoices &amp; receipts</p></div></div>
+      <div class="tablewrap" style="margin-bottom:20px"><table>
+        <thead><tr><th>Invoice #</th><th>Date</th><th>Vehicle</th><th>Buyer</th><th>Amount</th><th></th></tr></thead>
+        <tbody id="invBody"></tbody>
+      </table></div>
+      <div id="invoicePreview"></div>
+    </section>
+
+    <section id="reports" class="hidden">
+      <div class="head"><div><h1 class="h1">Reports</h1><p class="sub">Financial year 2026 · Singapore</p></div>
+        <button class="btn">&#8595; Export PDF</button></div>
+      <div class="kpis">
+        <div class="kpi"><div class="lab">Units sold (YTD)</div><div class="val">78</div></div>
+        <div class="kpi"><div class="lab">Revenue (YTD)</div><div class="val">$7.9M</div></div>
+        <div class="kpi"><div class="lab">Gross profit (YTD)</div><div class="val" style="color:var(--pos)">$612,400</div></div>
+        <div class="kpi"><div class="lab">Avg margin</div><div class="val">7.8%</div></div>
+      </div>
+      <div class="card" style="margin-bottom:16px"><h3>Monthly performance</h3>
+        <table><thead><tr><th>Month</th><th>Units</th><th>Revenue</th><th>Cost</th><th>Net profit</th><th>Margin</th></tr></thead>
+        <tbody id="repBody"></tbody></table>
+      </div>
+      <div class="card"><h3>Profit by make (S$ &#8217;000)</h3><div class="bars" id="makeBars" style="height:150px"></div></div>
+    </section>
+  </main>
+</div>
+
+<div class="ov" id="ov" onclick="if(event.target===this)closeM()">
+  <div class="modal"><div class="mhead"><div class="t" id="mTitle"></div><button class="x" onclick="closeM()">&#10005;</button></div>
+    <div class="mbody" id="mBody"></div></div>
+</div>
+
+<script>
+const fmt = n => '$' + Math.round(n).toLocaleString('en-SG');
+const tones = ['#334155','#0e7c66','#1d4ed8','#7c2d12','#4c1d95','#155e75','#9f1239','#3f6212','#0f766e','#92400e','#1e293b','#5b21b6'];
+const V = [
+ {reg:'SGH2857G',make:'Toyota',model:'Vios 1.5 G',yr:2019,km:62000,coe:'04/2029',colour:'Silver',purchase:92000,recon:[['Workshop / Repairs',1250],['Grooming / Polish',480],['Transport',300],['Road Tax',742],['Admin',350]],sale:103800,status:'Sold',buyer:'Marcus Lee',date:'02 Oct 2026',days:11},
+ {reg:'SJM5922U',make:'Honda',model:'Vezel 1.5 Hybrid',yr:2020,km:48500,coe:'06/2030',colour:'White',purchase:108000,recon:[['Workshop / Repairs',900],['Grooming / Polish',520],['Battery check',300],['Road Tax',750],['Admin',350]],sale:121500,status:'Sold',buyer:'Priya Nair',date:'05 Oct 2026',days:8},
+ {reg:'SKJ3506E',make:'Mazda',model:'Mazda 3 1.5',yr:2018,km:71000,coe:'09/2028',colour:'Red',purchase:66000,recon:[['Workshop / Repairs',1600],['Spray touch-up',900],['Grooming / Polish',450],['Road Tax',742]],sale:0,status:'In Stock',buyer:'',date:'',days:17},
+ {reg:'SLG2254S',make:'Mercedes-Benz',model:'C180 Avantgarde',yr:2021,km:33000,coe:'03/2031',colour:'Black',purchase:182000,recon:[['Workshop / Repairs',2400],['Detailing',850],['Transport',300],['Road Tax',1210],['Admin',350]],sale:0,status:'In Stock',buyer:'',date:'',days:6},
+ {reg:'SNW5280M',make:'Toyota',model:'Corolla Altis 1.6',yr:2019,km:58000,coe:'11/2029',colour:'White',purchase:95000,recon:[['Workshop / Repairs',1100],['Grooming / Polish',480],['Road Tax',742],['Admin',350]],sale:106200,status:'Sold',buyer:'Wei Jie Ong',date:'08 Oct 2026',days:9},
+ {reg:'SPC2329J',make:'Honda',model:'Civic 1.6 VTi',yr:2020,km:41000,coe:'05/2030',colour:'Grey',purchase:104000,recon:[['Workshop / Repairs',780],['Grooming / Polish',500],['Road Tax',750]],sale:0,status:'In Stock',buyer:'',date:'',days:4},
+ {reg:'SMK8524R',make:'BMW',model:'318i Sport',yr:2021,km:29000,coe:'02/2031',colour:'Blue',purchase:168000,recon:[['Workshop / Repairs',2100],['Detailing',900],['Transport',300],['Road Tax',1180]],sale:0,status:'In Stock',buyer:'',date:'',days:13},
+ {reg:'SGK5584H',make:'Hyundai',model:'Avante 1.6',yr:2019,km:66000,coe:'08/2029',colour:'White',purchase:74000,recon:[['Workshop / Repairs',1350],['Grooming / Polish',460],['Road Tax',742],['Admin',350]],sale:83600,status:'Sold',buyer:'Siti Rahman',date:'03 Oct 2026',days:14},
+ {reg:'SBA1472C',make:'Kia',model:'Cerato 1.6 EX',yr:2020,km:52000,coe:'07/2030',colour:'Silver',purchase:78000,recon:[['Workshop / Repairs',980],['Grooming / Polish',470],['Road Tax',750]],sale:0,status:'In Stock',buyer:'',date:'',days:21},
+ {reg:'SNX9090P',make:'Nissan',model:'Qashqai 1.2',yr:2018,km:79000,coe:'10/2028',colour:'Black',purchase:69000,recon:[['Workshop / Repairs',1750],['Spray touch-up',1100],['Grooming / Polish',450],['Road Tax',742]],sale:0,status:'In Progress',buyer:'',date:'',days:26},
+ {reg:'SLD2148G',make:'Toyota',model:'Camry 2.5',yr:2021,km:36000,coe:'01/2031',colour:'Black',purchase:146000,recon:[['Workshop / Repairs',1500],['Detailing',700],['Road Tax',1180],['Admin',350]],sale:162800,status:'Sold',buyer:'Arjun Menon',date:'10 Oct 2026',days:7},
+ {reg:'SGP7731S',make:'Audi',model:'A3 Sportback',yr:2020,km:44000,coe:'06/2030',colour:'White',purchase:132000,recon:[['Workshop / Repairs',1900],['Detailing',820],['Transport',300],['Road Tax',980]],sale:0,status:'In Stock',buyer:'',date:'',days:9}
+];
+V.forEach((v,i)=>{ v.tone=tones[i%tones.length]; v.reconTotal=v.recon.reduce((a,b)=>a+b[1],0); v.cost=v.purchase+v.reconTotal; v.profit=v.sale?v.sale-v.cost:0; v.margin=v.sale?(v.profit/v.sale*100):0; });
+const WORKDONE = {
+ 'SGH2857G':[['02 Oct 2026','Pre-delivery service','Oil, filters, brake pads',1250],['28 Sep 2026','Interior grooming','Full polish + leather treatment',480]],
+ 'SKJ3506E':[['09 Oct 2026','Front bumper respray','Minor scuff repaired and resprayed',900],['07 Oct 2026','Suspension check','Replaced front links',1600]],
+ 'SLG2254S':[['11 Oct 2026','Major service','Service + new wiper blades',2400],['10 Oct 2026','Ceramic detailing','Exterior ceramic coat',850]],
+ 'SNX9090P':[['12 Oct 2026','Accident touch-up','Rear quarter panel spray',1100],['09 Oct 2026','Aircon regas','Compressor serviced',1750]],
+ 'SMK8524R':[['13 Oct 2026','Full detailing','Paint correction + interior',900],['11 Oct 2026','Brake service','New discs and pads',2100]]
+};
+const profit=[["May",42],["Jun",47],["Jul",51],["Aug",55],["Sep",54],["Oct",61.5]];
+const makes=[["Toyota",184],["Honda",141],["Mercedes",96],["BMW",73],["Others",118]];
+const months=[["May",11,"$1.02M","$948K","$42,100","6.9%"],["Jun",12,"$1.14M","$1.05M","$47,300","7.2%"],["Jul",13,"$1.28M","$1.17M","$51,400","7.5%"],["Aug",14,"$1.39M","$1.27M","$55,200","7.6%"],["Sep",13,"$1.31M","$1.20M","$54,000","7.4%"],["Oct",9,"$0.93M","$0.86M","$61,480","8.1%"]];
+function go(s){
+  document.querySelectorAll('.main section').forEach(e=>e.classList.add('hidden'));
+  document.getElementById(s).classList.remove('hidden');
+  document.querySelectorAll('#nav a').forEach(a=>a.classList.toggle('active',a.dataset.s===s));
+  window.scrollTo(0,0);
+}
+document.getElementById('nav').addEventListener('click',e=>{const a=e.target.closest('a');if(a)go(a.dataset.s)});
+function barChart(el,data,unit,max){
+  const mx=max||Math.max(...data.map(d=>d[1]));
+  el.innerHTML=data.map(d=>`<div class="bar"><div class="v">${unit==='k'?'$'+d[1]+'k':d[1]}</div><div class="col" style="height:${Math.round(d[1]/mx*100)}%"><i></i></div><div class="m">${d[0]}</div></div>`).join('');
+}
+function renderStock(){
+  const q=(document.getElementById('q').value||'').toLowerCase();
+  const rows=V.filter(v=>(`${v.reg} ${v.make} ${v.model} ${v.buyer}`).toLowerCase().includes(q));
+  document.getElementById('stockCount').textContent=V.length+' vehicles';
+  document.getElementById('stockBody').innerHTML=rows.map(v=>{
+    const pc=v.status==='Sold'?'sold':v.status==='In Progress'?'prog':'stock';
+    return `<tr class="row" onclick="openV('${v.reg}')">
+      <td><span class="reg">${v.reg}</span></td>
+      <td>${v.make} ${v.model}</td><td>${v.yr}</td><td>${v.km.toLocaleString()} km</td>
+      <td>${fmt(v.cost)}</td>
+      <td>${v.sale?fmt(v.sale):'<span class="mut">&mdash;</span>'}</td>
+      <td>${v.sale?`<span class="pos">${fmt(v.profit)}</span>`:'<span class="mut">&mdash;</span>'}</td>
+      <td><span class="pill ${pc}">${v.status}</span></td></tr>`;
+  }).join('');
+}
+function recent(){
+  document.getElementById('recent').innerHTML=V.filter(v=>v.status==='Sold').sort((a,b)=>b.profit-a.profit).slice(0,5).map(v=>
+    `<div class="rowline"><span class="k">${v.reg} · ${v.make} ${v.model}</span><span class="pos">${fmt(v.profit)}</span></div>`).join('');
+}
+function openV(reg){
+  const v=V.find(x=>x.reg===reg);
+  document.getElementById('mTitle').textContent=`${v.reg} — ${v.make} ${v.model}`;
+  const wd=WORKDONE[reg]||[];
+  const wdTotal=wd.reduce((a,b)=>a+b[3],0);
+  document.getElementById('mBody').innerHTML=`
+    <div class="grid2c" style="margin-bottom:14px">
+      <div class="sec"><h4>Vehicle</h4>
+        <div class="rowline"><span class="k">Reg</span><span>${v.reg}</span></div>
+        <div class="rowline"><span class="k">Make / Model</span><span>${v.make} ${v.model}</span></div>
+        <div class="rowline"><span class="k">Reg year</span><span>${v.yr}</span></div>
+        <div class="rowline"><span class="k">Colour</span><span>${v.colour}</span></div>
+        <div class="rowline"><span class="k">Mileage</span><span>${v.km.toLocaleString()} km</span></div>
+        <div class="rowline"><span class="k">COE expiry</span><span>${v.coe}</span></div>
+      </div>
+      <div class="sec"><h4>Costs</h4>
+        <div class="rowline"><span class="k">Purchase price</span><span>${fmt(v.purchase)}</span></div>
+        ${v.recon.map(r=>`<div class="rowline"><span class="k">${r[0]}</span><span>${fmt(r[1])}</span></div>`).join('')}
+        <div class="rowline" style="font-weight:800;border-top:2px solid var(--line);margin-top:4px;padding-top:8px"><span>Total cost</span><span>${fmt(v.cost)}</span></div>
+      </div>
+    </div>
+    <div class="totrow" style="margin-bottom:16px">
+      <div><div class="lab">Total cost</div><div class="num">${fmt(v.cost)}</div></div>
+      <div><div class="lab">Sale price</div><div class="num">${v.sale?fmt(v.sale):'&mdash;'}</div></div>
+      <div><div class="lab">Net profit</div><div class="num" style="color:${v.sale?'var(--pos)':'inherit'}">${v.sale?fmt(v.profit):'&mdash;'}</div></div>
+      <div><div class="lab">Margin</div><div class="num">${v.sale?v.margin.toFixed(1)+'%':'&mdash;'}</div></div>
+    </div>
+    <div class="sec"><h4>Work done record ${wd.length?`· ${wd.length} ${wd.length>1?'entries':'entry'}`:''}</h4>
+      ${wd.length?wd.map((w,i)=>`<div class="wd"><div class="wdth" style="background:${tones[(i+2)%tones.length]}"></div><div><div class="d">${w[0]}</div><div class="ti">${w[1]}</div><div class="no">${w[2]}</div></div><div class="cost">${fmt(w[3])}</div></div>`).join('')+`<div class="rowline" style="font-weight:800;border-top:2px solid var(--line);margin-top:6px;padding-top:8px"><span>Total logged</span><span>${fmt(wdTotal)}</span></div>`:'<p class="mut" style="margin:4px 0">No work logged yet.</p>'}
+    </div>
+    <div style="display:flex;justify-content:flex-end;gap:10px">
+      <button class="btn">Sale invoice (PDF)</button>
+      <button class="btn primary">Edit vehicle</button>
+    </div>`;
+  document.getElementById('ov').classList.add('open');
+}
+function closeM(){document.getElementById('ov').classList.remove('open')}
+function renderWork(){
+  const keys=Object.keys(WORKDONE);
+  document.getElementById('workCards').innerHTML=keys.map(reg=>{
+    const v=V.find(x=>x.reg===reg); const wd=WORKDONE[reg];
+    const tot=wd.reduce((a,b)=>a+b[3],0);
+    return `<div class="vcard" style="cursor:pointer" onclick="openV('${reg}')">
+      <div class="vphoto" style="background:linear-gradient(135deg,${v.tone},#0f172a)">${v.reg}</div>
+      <div class="bd"><div class="mk">${v.make} ${v.model}</div><div class="sm">${wd[0][1]}</div>
+      <span class="chip">${fmt(tot)} · ${wd.length} job${wd.length>1?'s':''}</span></div></div>`;
+  }).join('');
+}
+function renderInvoices(){
+  const sold=V.filter(v=>v.status==='Sold');
+  document.getElementById('invBody').innerHTML=sold.map((v,i)=>`<tr class="row" onclick="showInvoice('${v.reg}')">
+    <td class="reg">INV-${1040+i}</td><td>${v.date}</td><td>${v.reg} · ${v.make} ${v.model}</td><td>${v.buyer}</td><td>${fmt(v.sale)}</td>
+    <td style="text-align:right"><button class="btn" onclick="event.stopPropagation();showInvoice('${v.reg}')">View</button></td></tr>`).join('');
+  showInvoice(sold[0].reg);
+}
+function showInvoice(reg){
+  const v=V.find(x=>x.reg===reg); const i=V.filter(x=>x.status==='Sold').indexOf(v);
+  const gst=Math.round(v.sale*0.09/1.09);
+  document.getElementById('invoicePreview').innerHTML=`
+  <div class="inv">
+    <div class="top"><div><div class="co">AutoLedgers</div><div class="muted-note">AutoLedgers Motors Pte Ltd · UEN 202612345A<br>21 Ubi Road 1, Singapore 408724</div></div>
+      <div style="text-align:right"><div style="font-weight:800;font-size:16px">SALES INVOICE</div><div class="muted-note">No. INV-${1040+i}<br>${v.date}</div></div></div>
+    <div style="display:flex;justify-content:space-between;margin-bottom:14px;font-size:13px">
+      <div><div class="mut">Billed to</div><b>${v.buyer}</b></div>
+      <div style="text-align:right"><div class="mut">Vehicle</div><b>${v.reg}</b></div></div>
+    <table><thead><tr><th>Description</th><th style="text-align:right">Amount</th></tr></thead>
+      <tbody>
+      <tr><td>${v.make} ${v.model} (${v.yr}) · ${v.colour}<br><span class="mut" style="font-size:12px">${v.km.toLocaleString()} km · COE exp ${v.coe}</span></td><td style="text-align:right">${fmt(v.sale-gst)}</td></tr>
+      <tr><td>GST (9%)</td><td style="text-align:right">${fmt(gst)}</td></tr>
+      <tr><td style="font-weight:800;border-top:2px solid var(--brand)">Total payable</td><td style="text-align:right;font-weight:800;border-top:2px solid var(--brand)">${fmt(v.sale)}</td></tr>
+      </tbody></table>
+    <p class="muted-note">Thank you for your purchase. Payment due within 7 days. This is a sample invoice generated by AutoLedgers.</p>
+  </div>`;
+}
+function renderReports(){
+  document.getElementById('repBody').innerHTML=months.map(m=>`<tr><td><b>${m[0]}</b></td><td>${m[1]}</td><td>${m[2]}</td><td>${m[3]}</td><td class="pos">${m[4]}</td><td>${m[5]}</td></tr>`).join('');
+  barChart(document.getElementById('makeBars'),makes,'k');
+}
+barChart(document.getElementById('profitBars'),profit,'k');
+recent(); renderStock(); renderWork(); renderInvoices(); renderReports();
+</script>
+</body>
+</html>
